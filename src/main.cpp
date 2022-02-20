@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <string.h>
 
 #define BLYNK_TEMPLATE_ID           "TMPLOZYkdSFA"
 #define BLYNK_DEVICE_NAME           "HADES_ESP32"
@@ -6,16 +7,21 @@
 #define BLYNK_PRINT Serial
 //#define BLYNK_DEBUG
 
-#define APP_DEBUG
-
+// must be after #define
 #include "BlynkEdgent.h"
 
-#include <BlynkSimpleEsp32.h>
+#define APP_DEBUG
 
-// BLYNK_WRITE(V1) {
-//   double sprayTime = param.asDouble();
-//   Serial.print(sprayTime);
-// }
+double sprayTime;
+
+BLYNK_CONNECTED() {
+    Blynk.syncAll();
+}
+
+BLYNK_WRITE(V1) {
+  sprayTime = param.asDouble();
+  Serial.print((String) "Spray Time: " + sprayTime + "\n");
+}
 
 void setup()
 {
