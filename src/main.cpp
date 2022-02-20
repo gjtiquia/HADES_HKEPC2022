@@ -8,8 +8,14 @@
 
 #define APP_DEBUG
 
-// Uncomment your board, or configure a custom board in Settings.h
 #include "BlynkEdgent.h"
+
+#include <BlynkSimpleEsp32.h>
+
+// BLYNK_WRITE(V1) {
+//   double sprayTime = param.asDouble();
+//   Serial.print(sprayTime);
+// }
 
 void setup()
 {
