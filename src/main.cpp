@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include <string.h>
+#include <SimpleTimer.h>
 
 #define BLYNK_TEMPLATE_ID           "TMPLOZYkdSFA"
 #define BLYNK_DEVICE_NAME           "HADES_ESP32"
@@ -21,12 +21,38 @@
 #define V_TEST_CONNECTION V7
 
 #define LED_PIN 2
+#define IR_SENSOR_PIN 0 // 13
+
+SimpleTimer timer;
 
 WidgetTerminal terminal(V_TERMINAL);
 
 double sprayTime;
 bool connected = false;
 bool online = false;
+bool spraying = false;
+
+void stop_spray() {
+  spraying = false;
+  Blynk.virtualWrite(V_SPRAYING, 0);
+  Blynk.virtualWrite(V_TEST_SPRAY, 0);
+
+  Blynk.setProperty(V_ONLINE, "isDisabled", false);
+
+  if (!online) {
+    Blynk.setProperty(V_TEST_SPRAY, "isDisabled", false);
+    Blynk.setProperty(V_SPRAYTIME, "isDisabled", false);
+  }
+}
+
+void spray(double time) {
+  spraying = true;
+  Blynk.virtualWrite(V_SPRAYING, 1);
+  Blynk.setProperty(V_ONLINE, "isDisabled", true);
+
+  // Stop spraying after sprayTime
+  timer.setTimeout(sprayTime * 1000, stop_spray);
+}
 
 BLYNK_CONNECTED() {
   connected = true;
@@ -36,7 +62,14 @@ BLYNK_CONNECTED() {
   terminal.println("Device Connected");
   terminal.flush();
 
+  // Initialize UI
   Blynk.virtualWrite(V_ONLINE, 0);
+  Blynk.virtualWrite(V_IR_SENSOR, 0);
+  Blynk.virtualWrite(V_SPRAYING, 0);
+  Blynk.virtualWrite(V_TEST_SPRAY, 0);
+  Blynk.setProperty(V_TEST_SPRAY, "isDisabled", false);
+  Blynk.setProperty(V_SPRAYTIME, "isDisabled", false);
+  Blynk.setProperty(V_ONLINE, "isDisabled", false);
 
   Blynk.syncAll();
 }
@@ -54,13 +87,6 @@ BLYNK_WRITE(V_TEST_CONNECTION) {
   Serial.print((String) "Test Button Pressed: " + button + "\n");
   terminal.println((String) "Device Received Test Button Press: " + button);
   terminal.flush();
-
-  // if (button == 0) {
-  //   digitalWrite(LED_PIN, LOW);
-  // }
-  // else if (button == 1) {
-  //   digitalWrite(LED_PIN, HIGH);
-  // }
 }
 
 BLYNK_WRITE(V_ONLINE) {
@@ -82,6 +108,20 @@ BLYNK_WRITE(V_ONLINE) {
   }
 }
 
+BLYNK_WRITE(V_TEST_SPRAY) {
+  int state = param.asInt();
+
+  Serial.print((String) "Test Spray State: " + state + "\n");
+  terminal.println((String) "Device Received Test Spray State: " + state);
+  terminal.flush();
+
+  if (state == 1) {
+    Blynk.setProperty(V_TEST_SPRAY, "isDisabled", true);
+    Blynk.setProperty(V_SPRAYTIME, "isDisabled", true);
+    spray(sprayTime);
+  }
+}
+
 void setup()
 {
   Serial.begin(115200);
@@ -94,10 +134,17 @@ void setup()
 }
 
 void loop() {
+  BlynkEdgent.run();
+  timer.run();
+
+  // Connection LED indicator
   if (connected && !Blynk.connected()){
     connected = false;
     digitalWrite(LED_PIN, LOW); 
   }
 
-  BlynkEdgent.run();
+  // Online Spraying
+  if (online) {
+
+  }
 }
