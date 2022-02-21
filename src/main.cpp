@@ -125,6 +125,21 @@ BLYNK_WRITE(V_TEST_SPRAY) {
   }
 }
 
+void detectIR() {
+  // because GPIO 0 is Active Low
+  bool isActivated = !digitalRead(IR_SENSOR_PIN);
+
+  if (isActivated) {
+    Blynk.virtualWrite(V_IR_SENSOR, 1);
+    
+    // Online Spraying
+    if (online && !spraying) spray();
+  }
+  else {
+    Blynk.virtualWrite(V_IR_SENSOR, 0);
+  }
+}
+
 void setup()
 {
   Serial.begin(115200);
@@ -149,16 +164,6 @@ void loop() {
     digitalWrite(LED_PIN, LOW); 
   }
 
-  // IR Sensor Indicator
-  if (digitalRead(IR_SENSOR_PIN) == LOW) {
-    Blynk.virtualWrite(V_IR_SENSOR, 1);
-  }
-  else if (digitalRead(IR_SENSOR_PIN) == HIGH) {
-    Blynk.virtualWrite(V_IR_SENSOR, 0);
-  }
-
-  // Online Spraying
-  if (online && !spraying && digitalRead(IR_SENSOR_PIN) == LOW) {
-    spray();
-  }
+  // Detect IR
+  detectIR();
 }
