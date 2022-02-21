@@ -12,28 +12,25 @@
 
 #define APP_DEBUG
 
-#define V_CONNECTED V0
 #define V_SPRAYTIME V1
 #define V_ONLINE V2
 #define V_IR_SENSOR V3
 #define V_SPRAYING V4
-#define V_TEST_SPRAY
+#define V_TEST_SPRAY V5
+#define V_TERMINAL V6
+
+WidgetTerminal terminal(V6);
 
 double sprayTime;
 
 BLYNK_CONNECTED() {
-    Blynk.virtualWrite(V_CONNECTED, 1);
+    terminal.println("Device Connected");
     Blynk.syncAll();
 }
 
 BLYNK_WRITE(V_SPRAYTIME) {
   sprayTime = param.asDouble();
   Serial.print((String) "Spray Time: " + sprayTime + "s\n");
-}
-
-BLYNK_WRITE(V_CONNECTED) {
-  int connected = param.asInt();
-  Serial.print((String) "Connected: " + connected);
 }
 
 void setup()
