@@ -22,6 +22,7 @@
 
 #define LED_PIN 2
 #define IR_SENSOR_PIN 0 // 13
+#define MOTOR_PIN 14
 
 SimpleTimer timer;
 
@@ -34,6 +35,7 @@ bool spraying = false;
 
 void stop_spray() {
   spraying = false;
+  digitalWrite(MOTOR_PIN, LOW);
   Blynk.virtualWrite(V_SPRAYING, 0);
   Blynk.virtualWrite(V_TEST_SPRAY, 0);
 
@@ -45,8 +47,9 @@ void stop_spray() {
   }
 }
 
-void spray(double time) {
+void spray() {
   spraying = true;
+  digitalWrite(MOTOR_PIN, HIGH);
   Blynk.virtualWrite(V_SPRAYING, 1);
   Blynk.setProperty(V_ONLINE, "isDisabled", true);
 
@@ -118,7 +121,7 @@ BLYNK_WRITE(V_TEST_SPRAY) {
   if (state == 1) {
     Blynk.setProperty(V_TEST_SPRAY, "isDisabled", true);
     Blynk.setProperty(V_SPRAYTIME, "isDisabled", true);
-    spray(sprayTime);
+    spray();
   }
 }
 
@@ -129,7 +132,10 @@ void setup()
   
   BlynkEdgent.begin();
 
+  pinMode(IR_SENSOR_PIN, INPUT);
   pinMode(LED_PIN, OUTPUT);
+  pinMode(MOTOR_PIN, OUTPUT);
+
   digitalWrite(LED_PIN, LOW);
 }
 
@@ -143,8 +149,16 @@ void loop() {
     digitalWrite(LED_PIN, LOW); 
   }
 
-  // Online Spraying
-  if (online) {
+  // IR Sensor Indicator
+  if (digitalRead(IR_SENSOR_PIN) == LOW) {
+    Blynk.virtualWrite(V_IR_SENSOR, 1);
+  }
+  else if (digitalRead(IR_SENSOR_PIN) == HIGH) {
+    Blynk.virtualWrite(V_IR_SENSOR, 0);
+  }
 
+  // Online Spraying
+  if (online && !spraying && digitalRead(IR_SENSOR_PIN) == LOW) {
+    spray();
   }
 }
