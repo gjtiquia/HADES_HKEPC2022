@@ -19,10 +19,16 @@
 #define V_TEST_SPRAY V5
 #define V_TERMINAL V6
 #define V_TEST_CONNECTION V7
+#define V_SUPPLY V8
 
 #define LED_PIN 2
-#define IR_SENSOR_PIN 0 // 13
+#define IR_SENSOR_PIN 0
 #define MOTOR_PIN 14
+#define WATER_POWER_PIN 26
+#define WATER_SENSOR_PIN 33
+
+#define WATER_THRESHOLD 2
+#define WATER_NOTIFY_LIMIT_TIME 1800000 // in ms = 30min
 
 SimpleTimer timer;
 
@@ -32,6 +38,14 @@ double sprayTime;
 bool connected = false;
 bool online = false;
 bool spraying = false;
+bool notified = false;
+bool hasSupply = false;
+
+void debug(String message) {
+  Serial.print((String) message + "\n");
+  terminal.println((String) message);
+  terminal.flush();
+}
 
 void stop_spray() {
   spraying = false;
@@ -70,6 +84,7 @@ BLYNK_CONNECTED() {
   Blynk.virtualWrite(V_IR_SENSOR, 0);
   Blynk.virtualWrite(V_SPRAYING, 0);
   Blynk.virtualWrite(V_TEST_SPRAY, 0);
+  Blynk.virtualWrite(V_SUPPLY, 0);
   Blynk.setProperty(V_TEST_SPRAY, "isDisabled", false);
   Blynk.setProperty(V_SPRAYTIME, "isDisabled", false);
   Blynk.setProperty(V_ONLINE, "isDisabled", false);
@@ -103,6 +118,8 @@ BLYNK_WRITE(V_ONLINE) {
     online = false;
     Blynk.setProperty(V_SPRAYTIME, "isDisabled", false);
     Blynk.setProperty(V_TEST_SPRAY, "isDisabled", false);
+
+    notified = false;
   }
   else if (state == 1) {
     online = true;
@@ -133,7 +150,7 @@ void detectIR() {
     Blynk.virtualWrite(V_IR_SENSOR, 1);
     
     // Online Spraying
-    if (online && !spraying) spray();
+    if (online && !spraying && hasSupply) spray();
   }
   else {
     Blynk.virtualWrite(V_IR_SENSOR, 0);
@@ -148,10 +165,58 @@ void setup()
   BlynkEdgent.begin();
 
   pinMode(IR_SENSOR_PIN, INPUT);
+  pinMode(WATER_SENSOR_PIN, INPUT);
+  pinMode(WATER_POWER_PIN, OUTPUT);
   pinMode(LED_PIN, OUTPUT);
   pinMode(MOTOR_PIN, OUTPUT);
 
   digitalWrite(LED_PIN, LOW);
+  digitalWrite(MOTOR_PIN, LOW);
+  digitalWrite(WATER_POWER_PIN, LOW);
+}
+
+void reset_notify() {
+  notified = false;
+}
+
+void measureWater() {
+  int water = analogRead(WATER_SENSOR_PIN);
+  digitalWrite(WATER_POWER_PIN, LOW);
+
+  water = WATER_THRESHOLD + 2;
+
+  if (water < WATER_THRESHOLD) {
+    if (hasSupply) {
+      Blynk.virtualWrite(V_SUPPLY, 0);
+      hasSupply = false;
+    }
+
+    if (online && !notified) {
+      // push
+      debug("Pushed Notification");
+      Blynk.logEvent("refill_disinfectant");
+
+      // start timer for next
+      notified = true;
+      timer.setTimeout(WATER_NOTIFY_LIMIT_TIME, reset_notify);
+    }
+  }
+  else {
+    if (!hasSupply) {
+      Blynk.virtualWrite(V_SUPPLY, 1);
+      hasSupply = true;
+    }
+    
+    if (notified = true) {
+      notified = false;
+    }
+  }
+}
+
+void detectWater() {
+  // measure water resistance
+  digitalWrite(WATER_POWER_PIN, HIGH);
+  timer.setTimeout(10, measureWater);
 }
 
 void loop() {
@@ -166,4 +231,7 @@ void loop() {
 
   // Detect IR
   detectIR();
+
+  // Detect Water
+  detectWater();
 }
