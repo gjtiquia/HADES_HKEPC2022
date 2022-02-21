@@ -22,15 +22,20 @@
 
 #define LED_PIN 2
 
-WidgetTerminal terminal(V6);
+WidgetTerminal terminal(V_TERMINAL);
 
 double sprayTime;
+bool connected = false;
 
 BLYNK_CONNECTED() {
-    terminal.println("----------------");
-    terminal.println("Device Connected");
-    terminal.flush();
-    Blynk.syncAll();
+  connected = true;
+  digitalWrite(LED_PIN, HIGH);
+
+  terminal.clear();
+  terminal.println("Device Connected");
+  terminal.flush();
+
+  Blynk.syncAll();
 }
 
 BLYNK_WRITE(V_SPRAYTIME) {
@@ -47,12 +52,12 @@ BLYNK_WRITE(V_TEST_CONNECTION) {
   terminal.println((String) "Device Received Test Button Press: " + button);
   terminal.flush();
 
-  if (button == 0) {
-    digitalWrite(LED_PIN, LOW);
-  }
-  else if (button == 1) {
-    digitalWrite(LED_PIN, HIGH);
-  }
+  // if (button == 0) {
+  //   digitalWrite(LED_PIN, LOW);
+  // }
+  // else if (button == 1) {
+  //   digitalWrite(LED_PIN, HIGH);
+  // }
 }
 
 void setup()
@@ -63,8 +68,14 @@ void setup()
   BlynkEdgent.begin();
 
   pinMode(LED_PIN, OUTPUT);
+  digitalWrite(LED_PIN, LOW);
 }
 
 void loop() {
+  if (connected && !Blynk.connected()){
+    connected = false;
+    digitalWrite(LED_PIN, LOW); 
+  }
+
   BlynkEdgent.run();
 }
