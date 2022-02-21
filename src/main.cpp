@@ -26,6 +26,7 @@ WidgetTerminal terminal(V_TERMINAL);
 
 double sprayTime;
 bool connected = false;
+bool online = false;
 
 BLYNK_CONNECTED() {
   connected = true;
@@ -34,6 +35,8 @@ BLYNK_CONNECTED() {
   terminal.clear();
   terminal.println("Device Connected");
   terminal.flush();
+
+  Blynk.virtualWrite(V_ONLINE, 0);
 
   Blynk.syncAll();
 }
@@ -58,6 +61,25 @@ BLYNK_WRITE(V_TEST_CONNECTION) {
   // else if (button == 1) {
   //   digitalWrite(LED_PIN, HIGH);
   // }
+}
+
+BLYNK_WRITE(V_ONLINE) {
+  int state = param.asInt();
+
+  Serial.print((String) "Online State: " + state + "\n");
+  terminal.println((String) "Device Received Online State: " + state);
+  terminal.flush();
+
+  if (state == 0) {
+    online = false;
+    Blynk.setProperty(V_SPRAYTIME, "isDisabled", false);
+    Blynk.setProperty(V_TEST_SPRAY, "isDisabled", false);
+  }
+  else if (state == 1) {
+    online = true;
+    Blynk.setProperty(V_SPRAYTIME, "isDisabled", true);
+    Blynk.setProperty(V_TEST_SPRAY, "isDisabled", true);
+  }
 }
 
 void setup()
