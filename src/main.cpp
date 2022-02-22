@@ -21,8 +21,9 @@
 #define V_TEST_CONNECTION V7
 #define V_SUPPLY V8
 
+// #define BOARD BUTTON PIN in Settings.h for reboot to connect to new network
 #define LED_PIN 2
-#define IR_SENSOR_PIN 0
+#define IR_SENSOR_PIN 0 // 13
 #define MOTOR_PIN 14
 #define WATER_POWER_PIN 26
 #define WATER_SENSOR_PIN 33
@@ -157,24 +158,6 @@ void detectIR() {
   }
 }
 
-void setup()
-{
-  Serial.begin(115200);
-  delay(100);
-  
-  BlynkEdgent.begin();
-
-  pinMode(IR_SENSOR_PIN, INPUT);
-  pinMode(WATER_SENSOR_PIN, INPUT);
-  pinMode(WATER_POWER_PIN, OUTPUT);
-  pinMode(LED_PIN, OUTPUT);
-  pinMode(MOTOR_PIN, OUTPUT);
-
-  digitalWrite(LED_PIN, LOW);
-  digitalWrite(MOTOR_PIN, LOW);
-  digitalWrite(WATER_POWER_PIN, LOW);
-}
-
 void reset_notify() {
   notified = false;
 }
@@ -217,6 +200,24 @@ void detectWater() {
   // measure water resistance
   digitalWrite(WATER_POWER_PIN, HIGH);
   timer.setTimeout(10, measureWater);
+}
+
+void setup()
+{
+  Serial.begin(115200);
+  delay(100);
+  
+  BlynkEdgent.begin();
+
+  pinMode(IR_SENSOR_PIN, INPUT);
+  pinMode(WATER_SENSOR_PIN, INPUT);
+  pinMode(WATER_POWER_PIN, OUTPUT);
+  pinMode(LED_PIN, OUTPUT);
+  pinMode(MOTOR_PIN, OUTPUT);
+
+  digitalWrite(LED_PIN, LOW);
+  digitalWrite(MOTOR_PIN, LOW);
+  digitalWrite(WATER_POWER_PIN, LOW);
 }
 
 void loop() {
