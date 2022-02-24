@@ -23,7 +23,7 @@
 
 // #define BOARD BUTTON PIN in Settings.h for reboot to connect to new network
 #define LED_PIN 2
-#define IR_SENSOR_PIN 0 // 13
+#define IR_SENSOR_PIN 13
 #define MOTOR_PIN 14
 #define WATER_POWER_PIN 26
 #define WATER_SENSOR_PIN 33
@@ -144,7 +144,7 @@ BLYNK_WRITE(V_TEST_SPRAY) {
 }
 
 void detectIR() {
-  // because GPIO 0 is Active Low
+  // because the IR Sensor is Active Low
   bool isActivated = !digitalRead(IR_SENSOR_PIN);
 
   if (isActivated) {
@@ -209,7 +209,7 @@ void setup()
   
   BlynkEdgent.begin();
 
-  pinMode(IR_SENSOR_PIN, INPUT);
+  pinMode(IR_SENSOR_PIN, INPUT_PULLUP);
   pinMode(WATER_SENSOR_PIN, INPUT);
   pinMode(WATER_POWER_PIN, OUTPUT);
   pinMode(LED_PIN, OUTPUT);
