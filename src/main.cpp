@@ -95,25 +95,19 @@ BLYNK_CONNECTED() {
 
 BLYNK_WRITE(V_SPRAYTIME) {
   sprayTime = param.asDouble();
-  Serial.print((String) "Spray Time: " + sprayTime + "s\n");
-  terminal.println((String) "Device Updated Spray Time: " + sprayTime + "s");
-  terminal.flush();
+  debug((String) "Spray Time: " + sprayTime + "s");
 }
 
 BLYNK_WRITE(V_TEST_CONNECTION) {
   int button = param.asInt();
 
-  Serial.print((String) "Test Button Pressed: " + button + "\n");
-  terminal.println((String) "Device Received Test Button Press: " + button);
-  terminal.flush();
+  debug((String) "Test Button Pressed: " + button);
 }
 
 BLYNK_WRITE(V_ONLINE) {
   int state = param.asInt();
 
-  Serial.print((String) "Online State: " + state + "\n");
-  terminal.println((String) "Device Received Online State: " + state);
-  terminal.flush();
+  debug((String) "Online State: " + state);
 
   if (state == 0) {
     online = false;
@@ -132,9 +126,7 @@ BLYNK_WRITE(V_ONLINE) {
 BLYNK_WRITE(V_TEST_SPRAY) {
   int state = param.asInt();
 
-  Serial.print((String) "Test Spray State: " + state + "\n");
-  terminal.println((String) "Device Received Test Spray State: " + state);
-  terminal.flush();
+  debug((String) "Test Spray State: " + state);
 
   if (state == 1) {
     Blynk.setProperty(V_TEST_SPRAY, "isDisabled", true);
@@ -166,7 +158,7 @@ void measureWater() {
   int water = analogRead(WATER_SENSOR_PIN);
   digitalWrite(WATER_POWER_PIN, LOW);
 
-  water = WATER_THRESHOLD + 2;
+  // water = WATER_THRESHOLD + 2;
 
   if (water < WATER_THRESHOLD) {
     if (hasSupply) {
@@ -209,7 +201,7 @@ void setup()
   
   BlynkEdgent.begin();
 
-  pinMode(IR_SENSOR_PIN, INPUT_PULLUP);
+  pinMode(IR_SENSOR_PIN, INPUT_PULLUP); // The IR Sensor gives either 0V or ??V
   pinMode(WATER_SENSOR_PIN, INPUT);
   pinMode(WATER_POWER_PIN, OUTPUT);
   pinMode(LED_PIN, OUTPUT);
