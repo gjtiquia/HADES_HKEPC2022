@@ -42,8 +42,12 @@ bool online = false;
 bool spraying = false;
 bool notified = false;
 bool hasSupply = false;
-int rest_pos = 140;
+int rest_pos = 160;
 int spray_pos = 20;
+
+// TO DO
+// IR sensor to push mode given sensor is a toggle
+// replace spray time with no. of sprays to set by user
 
 void debug(String message) {
   Serial.print((String) message + "\n");
@@ -51,13 +55,20 @@ void debug(String message) {
   terminal.flush();
 }
 
+void rest_servo() {
+  int true_rest = myservo.read();
+  myservo.write(true_rest);
+  debug("True rest: " + true_rest);
+}
+
 void stop_spray() {
   spraying = false;
   // digitalWrite(MOTOR_PIN, LOW);
   myservo.write(rest_pos);
+  timer.setTimeout(sprayTime + 15, rest_servo);
+
   Blynk.virtualWrite(V_SPRAYING, 0);
   Blynk.virtualWrite(V_TEST_SPRAY, 0);
-
   Blynk.setProperty(V_ONLINE, "isDisabled", false);
 
   if (!online) {
