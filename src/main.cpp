@@ -57,12 +57,14 @@ void debug(String message) {
 
 void rest_servo() {
   myservo.detach();
+  debug("Rested");
 }
 
 void stop_spray() {
   spraying = false;
   // digitalWrite(MOTOR_PIN, LOW);
-  myservo.detach();
+  myservo.write(rest_pos);
+  timer.setTimeout(sprayTime * 1000, rest_servo);
 
   Blynk.virtualWrite(V_SPRAYING, 0);
   Blynk.virtualWrite(V_TEST_SPRAY, 0);
@@ -220,6 +222,9 @@ void setup()
 	ESP32PWM::allocateTimer(2);
 	ESP32PWM::allocateTimer(3);
 	myservo.setPeriodHertz(50);    // standard 50 hz servo
+  myservo.attach(MOTOR_PIN, 500, 2400); // using default min/max of 1000us and 2000us
+  myservo.write(rest_pos);
+  timer.setTimeout(1000, rest_servo);
 
   pinMode(IR_SENSOR_PIN, INPUT_PULLUP); // The IR Sensor gives either 0V or ??V
   pinMode(WATER_SENSOR_PIN, INPUT);
