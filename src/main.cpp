@@ -43,7 +43,7 @@ bool spraying = false;
 bool notified = false;
 bool hasSupply = false;
 int rest_pos = 120;
-int spray_pos = 40;
+int spray_pos = 20;
 
 void debug(String message) {
   Serial.print((String) message + "\n");
