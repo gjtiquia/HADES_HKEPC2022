@@ -42,7 +42,8 @@ bool online = false;
 bool spraying = false;
 bool notified = false;
 bool hasSupply = false;
-int servo_pos = 0;
+int rest_pos = 60;
+int spray_pos = 160;
 
 void debug(String message) {
   Serial.print((String) message + "\n");
@@ -53,7 +54,7 @@ void debug(String message) {
 void stop_spray() {
   spraying = false;
   // digitalWrite(MOTOR_PIN, LOW);
-  myservo.write(10);
+  myservo.write(rest_pos);
   Blynk.virtualWrite(V_SPRAYING, 0);
   Blynk.virtualWrite(V_TEST_SPRAY, 0);
 
@@ -68,7 +69,7 @@ void stop_spray() {
 void spray() {
   spraying = true;
   // digitalWrite(MOTOR_PIN, HIGH);
-  myservo.write(170);
+  myservo.write(spray_pos);
   Blynk.virtualWrite(V_SPRAYING, 1);
   Blynk.setProperty(V_ONLINE, "isDisabled", true);
 
@@ -211,7 +212,7 @@ void setup()
 	ESP32PWM::allocateTimer(3);
 	myservo.setPeriodHertz(50);    // standard 50 hz servo
 	myservo.attach(MOTOR_PIN, 500, 2400); // using default min/max of 1000us and 2000us
-  myservo.write(10);
+  myservo.write(rest_pos);
 
   pinMode(IR_SENSOR_PIN, INPUT_PULLUP); // The IR Sensor gives either 0V or ??V
   pinMode(WATER_SENSOR_PIN, INPUT);
