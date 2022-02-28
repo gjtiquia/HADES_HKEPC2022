@@ -52,7 +52,8 @@ void debug(String message) {
 
 void stop_spray() {
   spraying = false;
-  digitalWrite(MOTOR_PIN, LOW);
+  // digitalWrite(MOTOR_PIN, LOW);
+  myservo.write(10);
   Blynk.virtualWrite(V_SPRAYING, 0);
   Blynk.virtualWrite(V_TEST_SPRAY, 0);
 
@@ -66,7 +67,8 @@ void stop_spray() {
 
 void spray() {
   spraying = true;
-  digitalWrite(MOTOR_PIN, HIGH);
+  // digitalWrite(MOTOR_PIN, HIGH);
+  myservo.write(170);
   Blynk.virtualWrite(V_SPRAYING, 1);
   Blynk.setProperty(V_ONLINE, "isDisabled", true);
 
@@ -209,6 +211,7 @@ void setup()
 	ESP32PWM::allocateTimer(3);
 	myservo.setPeriodHertz(50);    // standard 50 hz servo
 	myservo.attach(MOTOR_PIN, 500, 2400); // using default min/max of 1000us and 2000us
+  myservo.write(10);
 
   pinMode(IR_SENSOR_PIN, INPUT_PULLUP); // The IR Sensor gives either 0V or ??V
   pinMode(WATER_SENSOR_PIN, INPUT);
@@ -236,14 +239,4 @@ void loop() {
 
   // Detect Water
   detectWater();
-
-  for (servo_pos = 0; servo_pos <= 180; servo_pos += 1) { // goes from 0 degrees to 180 degrees
-		// in steps of 1 degree
-		myservo.write(servo_pos);    // tell servo to go to position in variable 'pos'
-		delay(15);             // waits 15ms for the servo to reach the position
-	}
-	for (servo_pos = 180; servo_pos >= 0; servo_pos -= 1) { // goes from 180 degrees to 0 degrees
-		myservo.write(servo_pos);    // tell servo to go to position in variable 'pos'
-		delay(15);             // waits 15ms for the servo to reach the position
-	}
 }
