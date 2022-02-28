@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <SimpleTimer.h>
+#include <ESP32Servo.h>
 
 #define BLYNK_TEMPLATE_ID           "TMPLOZYkdSFA"
 #define BLYNK_DEVICE_NAME           "HADES_ESP32"
