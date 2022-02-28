@@ -33,8 +33,8 @@
 #define WATER_NOTIFY_LIMIT_TIME 1800000 // in ms = 30min
 
 SimpleTimer timer;
-
 WidgetTerminal terminal(V_TERMINAL);
+Servo myservo;
 
 double sprayTime;
 bool connected = false;
@@ -42,6 +42,7 @@ bool online = false;
 bool spraying = false;
 bool notified = false;
 bool hasSupply = false;
+int servo_pos = 0;
 
 void debug(String message) {
   Serial.print((String) message + "\n");
@@ -202,6 +203,13 @@ void setup()
   
   BlynkEdgent.begin();
 
+  ESP32PWM::allocateTimer(0);
+	ESP32PWM::allocateTimer(1);
+	ESP32PWM::allocateTimer(2);
+	ESP32PWM::allocateTimer(3);
+	myservo.setPeriodHertz(50);    // standard 50 hz servo
+	myservo.attach(MOTOR_PIN, 500, 2400); // using default min/max of 1000us and 2000us
+
   pinMode(IR_SENSOR_PIN, INPUT_PULLUP); // The IR Sensor gives either 0V or ??V
   pinMode(WATER_SENSOR_PIN, INPUT);
   pinMode(WATER_POWER_PIN, OUTPUT);
@@ -228,4 +236,14 @@ void loop() {
 
   // Detect Water
   detectWater();
+
+  for (servo_pos = 0; servo_pos <= 180; servo_pos += 1) { // goes from 0 degrees to 180 degrees
+		// in steps of 1 degree
+		myservo.write(servo_pos);    // tell servo to go to position in variable 'pos'
+		delay(15);             // waits 15ms for the servo to reach the position
+	}
+	for (servo_pos = 180; servo_pos >= 0; servo_pos -= 1) { // goes from 180 degrees to 0 degrees
+		myservo.write(servo_pos);    // tell servo to go to position in variable 'pos'
+		delay(15);             // waits 15ms for the servo to reach the position
+	}
 }
