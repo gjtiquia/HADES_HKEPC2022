@@ -25,9 +25,10 @@
 // #define BOARD BUTTON PIN in Settings.h for reboot to connect to new network
 #define LED_PIN 2
 #define IR_SENSOR_PIN 13
-#define MOTOR_PIN 14
-#define WATER_POWER_PIN 26
-#define WATER_SENSOR_PIN 33
+#define IR_POWER_PIN 14
+#define MOTOR_PIN 26
+#define WATER_POWER_PIN 33
+#define WATER_SENSOR_PIN 35
 
 #define WATER_THRESHOLD 2
 #define WATER_NOTIFY_LIMIT_TIME 1800000 // in ms = 30min
@@ -48,6 +49,7 @@ int spray_pos = 20;
 // TO DO
 // IR sensor to push mode given sensor is a toggle
 // replace spray time with no. of sprays to set by user
+// water sensor check every day / few hours to prevent corrosion
 
 void debug(String message) {
   Serial.print((String) message + "\n");
@@ -227,6 +229,7 @@ void setup()
   timer.setTimeout(1000, rest_servo);
 
   pinMode(IR_SENSOR_PIN, INPUT_PULLUP); // The IR Sensor gives either 0V or ??V
+  pinMode(IR_POWER_PIN, OUTPUT);
   pinMode(WATER_SENSOR_PIN, INPUT);
   pinMode(WATER_POWER_PIN, OUTPUT);
   pinMode(LED_PIN, OUTPUT);
@@ -235,6 +238,7 @@ void setup()
   digitalWrite(LED_PIN, LOW);
   digitalWrite(MOTOR_PIN, LOW);
   digitalWrite(WATER_POWER_PIN, LOW);
+  digitalWrite(IR_POWER_PIN, HIGH);
 }
 
 void loop() {
