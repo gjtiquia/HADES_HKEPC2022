@@ -50,6 +50,7 @@ int spray_pos = 20;
 // IR sensor to push mode given sensor is a toggle
 // replace spray time with no. of sprays to set by user
 // water sensor check every day / few hours to prevent corrosion
+// calibrate water sensor (when empty)
 
 void debug(String message) {
   Serial.print((String) message + "\n");
@@ -153,19 +154,16 @@ BLYNK_WRITE(V_TEST_SPRAY) {
   }
 }
 
-void detectIR() {
-  // because the IR Sensor is Active Low
-  bool isActivated = !digitalRead(IR_SENSOR_PIN);
+void offIR() {
+  Blynk.virtualWrite(V_IR_SENSOR, 0);
+}
 
-  if (isActivated) {
-    Blynk.virtualWrite(V_IR_SENSOR, 1);
-    
-    // Online Spraying
-    if (online && !spraying && hasSupply) spray();
-  }
-  else {
-    Blynk.virtualWrite(V_IR_SENSOR, 0);
-  }
+void detectIR() {
+  Blynk.virtualWrite(V_IR_SENSOR, 1);
+  if (online && !spraying && hasSupply) spray();
+
+  // set off after 200ms
+  timer.setTimeout(200, offIR);
 }
 
 void reset_notify() {
@@ -228,7 +226,7 @@ void setup()
   myservo.write(rest_pos);
   timer.setTimeout(1000, rest_servo);
 
-  pinMode(IR_SENSOR_PIN, INPUT_PULLUP); // The IR Sensor gives either 0V or ??V
+  pinMode(IR_SENSOR_PIN, INPUT_PULLUP); // because the IR Sensor gives either 0V or ??V
   pinMode(IR_POWER_PIN, OUTPUT);
   pinMode(WATER_SENSOR_PIN, INPUT);
   pinMode(WATER_POWER_PIN, OUTPUT);
@@ -239,6 +237,8 @@ void setup()
   digitalWrite(MOTOR_PIN, LOW);
   digitalWrite(WATER_POWER_PIN, LOW);
   digitalWrite(IR_POWER_PIN, HIGH);
+
+  attachInterrupt(digitalPinToInterrupt(IR_SENSOR_PIN), detectIR, CHANGE);
 }
 
 void loop() {
@@ -250,9 +250,6 @@ void loop() {
     connected = false;
     digitalWrite(LED_PIN, LOW); 
   }
-
-  // Detect IR
-  detectIR();
 
   // Detect Water
   detectWater();
