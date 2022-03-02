@@ -7,11 +7,10 @@
 #define BLYNK_FIRMWARE_VERSION        "0.1.0"
 #define BLYNK_PRINT Serial
 //#define BLYNK_DEBUG
+#define APP_DEBUG
 
 // must be after #define
 #include "BlynkEdgent.h"
-
-#define APP_DEBUG
 
 #define V_SPRAYTIME V1
 #define V_ONLINE V2
