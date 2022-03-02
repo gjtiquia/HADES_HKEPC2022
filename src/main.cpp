@@ -158,7 +158,7 @@ void offIR() {
   Blynk.virtualWrite(V_IR_SENSOR, 0);
 }
 
-void detectIR() {
+void IRAM_ATTR detectIR() {
   Blynk.virtualWrite(V_IR_SENSOR, 1);
   if (online && !spraying && hasSupply) spray();
 
@@ -210,6 +210,10 @@ void detectWater() {
   timer.setTimeout(10, measureWater);
 }
 
+void IRAM_ATTR buttonPressed() {
+  debug("Boot pressed");
+}
+
 void setup()
 {
   Serial.begin(115200);
@@ -233,12 +237,16 @@ void setup()
   pinMode(LED_PIN, OUTPUT);
   pinMode(MOTOR_PIN, OUTPUT);
 
+  // test boot button
+  // pinMode(0, INPUT);
+  // attachInterrupt(digitalPinToInterrupt(0), buttonPressed, CHANGE);
+
   digitalWrite(LED_PIN, LOW);
   digitalWrite(MOTOR_PIN, LOW);
   digitalWrite(WATER_POWER_PIN, LOW);
   digitalWrite(IR_POWER_PIN, HIGH);
 
-  attachInterrupt(digitalPinToInterrupt(IR_SENSOR_PIN), detectIR, CHANGE);
+  // attachInterrupt(digitalPinToInterrupt(IR_SENSOR_PIN), detectIR, CHANGE);
 }
 
 void loop() {
