@@ -32,7 +32,7 @@
 
 #define WATER_THRESHOLD 2
 #define WATER_NOTIFY_LIMIT_TIME 1800000 // in ms = 30min
-#define WATER_DETECT_FREQUENCY 1800000 // in ms = 30min
+#define WATER_DETECT_FREQUENCY 1000 // in ms = 30min
 
 #define IR_TIMEOUT 200
 
