@@ -81,7 +81,6 @@ void stop_spray() {
 
 void spray() {
   spraying = true;
-  // digitalWrite(MOTOR_PIN, HIGH);
   myservo.attach(MOTOR_PIN, 500, 2400); // using default min/max of 1000us and 2000us
   myservo.write(spray_pos);
   Blynk.virtualWrite(V_SPRAYING, 1);
@@ -174,8 +173,6 @@ void measureWater() {
   int water = analogRead(WATER_SENSOR_PIN);
   digitalWrite(WATER_POWER_PIN, LOW);
 
-  // water = WATER_THRESHOLD + 2;
-
   if (water < WATER_THRESHOLD) {
     if (hasSupply) {
       Blynk.virtualWrite(V_SUPPLY, 0);
@@ -198,7 +195,7 @@ void measureWater() {
       hasSupply = true;
     }
     
-    if (notified = true) {
+    if (notified) {
       notified = false;
     }
   }
@@ -208,10 +205,6 @@ void detectWater() {
   // measure water resistance
   digitalWrite(WATER_POWER_PIN, HIGH);
   timer.setTimeout(10, measureWater);
-}
-
-void IRAM_ATTR buttonPressed() {
-  debug("Boot pressed");
 }
 
 void setup()
@@ -236,10 +229,6 @@ void setup()
   pinMode(WATER_POWER_PIN, OUTPUT);
   pinMode(LED_PIN, OUTPUT);
   pinMode(MOTOR_PIN, OUTPUT);
-
-  // test boot button
-  // pinMode(0, INPUT);
-  // attachInterrupt(digitalPinToInterrupt(0), buttonPressed, CHANGE);
 
   digitalWrite(LED_PIN, LOW);
   digitalWrite(MOTOR_PIN, LOW);
