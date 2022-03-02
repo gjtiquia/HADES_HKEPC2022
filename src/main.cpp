@@ -20,6 +20,7 @@
 #define V_TERMINAL V6
 #define V_TEST_CONNECTION V7
 #define V_SUPPLY V8
+#define V_NOTIFICATION_TOGGLE V9
 
 // #define BOARD BUTTON PIN in Settings.h for reboot to connect to new network
 #define LED_PIN 23
@@ -47,12 +48,12 @@ bool notified = false;
 bool hasSupply = false;
 bool currentIR = false;
 bool isIRActivated = false;
+bool notificationToggle = true;
 int rest_pos = 160;
 int spray_pos = 20;
 
 // TODO
 // replace spray time with no. of sprays to set by user
-// water sensor check every day / few hours to prevent corrosion
 // water sensor calibration
 // settings page in the app
 // sprayTime set max to 2 sec
@@ -111,6 +112,7 @@ BLYNK_CONNECTED() {
   Blynk.virtualWrite(V_SPRAYING, 0);
   Blynk.virtualWrite(V_TEST_SPRAY, 0);
   Blynk.virtualWrite(V_SUPPLY, 0);
+  Blynk.virtualWrite(V_NOTIFICATION_TOGGLE, 0);
   Blynk.setProperty(V_TEST_SPRAY, "isDisabled", false);
   Blynk.setProperty(V_SPRAYTIME, "isDisabled", false);
   Blynk.setProperty(V_ONLINE, "isDisabled", false);
@@ -145,6 +147,19 @@ BLYNK_WRITE(V_ONLINE) {
     online = true;
     Blynk.setProperty(V_SPRAYTIME, "isDisabled", true);
     Blynk.setProperty(V_TEST_SPRAY, "isDisabled", true);
+  }
+}
+
+BLYNK_WRITE(V_NOTIFICATION_TOGGLE) {
+  int state = param.asInt();
+
+  debug((String) "Notification Toggled: " + state);
+
+  if (state == 0) {
+    notificationToggle = false;
+  }
+  else if (state == 1) {
+    notificationToggle = true;
   }
 }
 
@@ -183,7 +198,7 @@ void measureWater() {
       hasSupply = false;
     }
 
-    if (online && !notified) {
+    if (online && !notified && notificationToggle) {
       // push
       debug("Pushed Notification");
       Blynk.logEvent("refill_disinfectant");
