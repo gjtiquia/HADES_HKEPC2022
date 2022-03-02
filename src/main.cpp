@@ -31,6 +31,7 @@
 
 #define WATER_THRESHOLD 2
 #define WATER_NOTIFY_LIMIT_TIME 1800000 // in ms = 30min
+#define WATER_DETECT_FREQUENCY 1800000 // in ms = 30min
 
 #define IR_TIMEOUT 200
 
@@ -53,6 +54,8 @@ int spray_pos = 20;
 // replace spray time with no. of sprays to set by user
 // water sensor calibration
 // settings page in the app
+// sprayTime set max to 2 sec
+// add sprayAmount? set a ratio 0 to 1 and find the angle between min and max
 
 void debug(String message) {
   Serial.print((String) message + "\n");
@@ -232,6 +235,9 @@ void setup()
   digitalWrite(IR_POWER_PIN, HIGH);
 
   currentIR = digitalRead(IR_SENSOR_PIN);
+
+  // Start to Detect Water every 30min
+  timer.setInterval(WATER_DETECT_FREQUENCY, detectWater);
 }
 
 void loop() {
@@ -246,7 +252,4 @@ void loop() {
 
   // Detect IR
   detectIR();
-
-  // Detect Water
-  detectWater();
 }
