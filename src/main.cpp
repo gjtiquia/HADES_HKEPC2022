@@ -50,6 +50,8 @@ int spray_pos = 20;
 // IR sensor to push mode given sensor is a toggle
 // replace spray time with no. of sprays to set by user
 // water sensor check every day / few hours to prevent corrosion
+// water sensor calibration
+// settings page in the app
 
 void debug(String message) {
   Serial.print((String) message + "\n");
