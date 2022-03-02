@@ -166,13 +166,15 @@ void deactivateIR() {
 void detectIR() {
   // check if IR changed
   if (currentIR != digitalRead(IR_SENSOR_PIN)) {
+    currentIR = digitalRead(IR_SENSOR_PIN);
+
     // check if IR is already on
     if (!isIRActivated) {
       isIRActivated = true;
       Blynk.virtualWrite(V_IR_SENSOR, 1);
 
       if (online && !spraying && hasSupply) spray();
-      
+
       timer.setTimeout(IR_TIMEOUT, deactivateIR);
     }
   }
