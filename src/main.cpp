@@ -21,6 +21,9 @@
 #define V_TEST_CONNECTION V7
 #define V_SUPPLY V8
 #define V_NOTIFICATION_TOGGLE V9
+#define V_MEASURE_WATER V10
+#define V_SET_WATER_THRESHOLD V11
+#define V_WATER_THRESHOLD V12
 
 // #define BOARD BUTTON PIN in Settings.h for reboot to connect to new network
 #define LED_PIN 23
@@ -30,9 +33,8 @@
 #define WATER_POWER_PIN 33
 #define WATER_SENSOR_PIN 35
 
-#define WATER_THRESHOLD 2
 #define WATER_NOTIFY_LIMIT_TIME 1800000 // in ms = 30min
-#define WATER_DETECT_FREQUENCY 1000 // in ms = 30min
+#define WATER_DETECT_FREQUENCY 1800000 // in ms = 30min
 
 #define IR_TIMEOUT 200
 
@@ -51,6 +53,7 @@ bool isIRActivated = false;
 bool notificationToggle = true;
 int rest_pos = 160;
 int spray_pos = 20;
+int water_threshold = 1800;
 
 // TODO
 // replace spray time with no. of sprays to set by user
@@ -175,6 +178,42 @@ BLYNK_WRITE(V_TEST_SPRAY) {
   }
 }
 
+BLYNK_WRITE(V_WATER_THRESHOLD) {
+  water_threshold = param.asInt();
+  debug((String) "Water Threshold: " + water_threshold);
+}
+
+void setWaterThreshold() {
+  water_threshold = analogRead(WATER_SENSOR_PIN);
+  Blynk.virtualWrite(V_WATER_THRESHOLD, water_threshold);
+  digitalWrite(WATER_POWER_PIN, LOW);
+  debug((String) "Water Threshold Set as: " + water_threshold);
+}
+
+
+BLYNK_WRITE(V_SET_WATER_THRESHOLD) {
+  int state = param.asInt();
+  if (state == 1) {
+    digitalWrite(WATER_POWER_PIN, HIGH);
+    timer.setTimeout(10, setWaterThreshold);
+  }
+}
+
+void measureWaterThreshold() {
+  int measuredWater = analogRead(WATER_SENSOR_PIN);
+  Blynk.virtualWrite(V_WATER_THRESHOLD, measuredWater);
+  digitalWrite(WATER_POWER_PIN, LOW);
+  debug((String) "Water Measured as: " + measuredWater);
+}
+
+BLYNK_WRITE(V_MEASURE_WATER) {
+  int state = param.asInt();
+  if (state == 1) {
+    digitalWrite(WATER_POWER_PIN, HIGH);
+    timer.setTimeout(10, measureWaterThreshold);
+  }
+}
+
 void detectIR() {
   // check if IR changed
   if (currentIR != digitalRead(IR_SENSOR_PIN)) {
@@ -190,9 +229,10 @@ void reset_notify() {
 
 void measureWater() {
   int water = analogRead(WATER_SENSOR_PIN);
+  debug((String) "Water Measured as: " + water);
   digitalWrite(WATER_POWER_PIN, LOW);
 
-  if (water < WATER_THRESHOLD) {
+  if (water < water_threshold) {
     if (hasSupply) {
       Blynk.virtualWrite(V_SUPPLY, 0);
       hasSupply = false;
