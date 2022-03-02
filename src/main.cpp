@@ -22,7 +22,7 @@
 #define V_SUPPLY V8
 
 // #define BOARD BUTTON PIN in Settings.h for reboot to connect to new network
-#define LED_PIN 2
+#define LED_PIN 23
 #define IR_SENSOR_PIN 13
 #define IR_POWER_PIN 14
 #define MOTOR_PIN 26
