@@ -32,6 +32,8 @@
 #define WATER_THRESHOLD 2
 #define WATER_NOTIFY_LIMIT_TIME 1800000 // in ms = 30min
 
+#define IR_TIMEOUT 200
+
 SimpleTimer timer;
 WidgetTerminal terminal(V_TERMINAL);
 Servo myservo;
@@ -42,6 +44,8 @@ bool online = false;
 bool spraying = false;
 bool notified = false;
 bool hasSupply = false;
+bool currentIR = false;
+bool isIRActivated = false;
 int rest_pos = 160;
 int spray_pos = 20;
 
@@ -154,18 +158,23 @@ BLYNK_WRITE(V_TEST_SPRAY) {
   }
 }
 
-void detectIR() {
-  // because the IR Sensor is Active Low
-  bool isActivated = !digitalRead(IR_SENSOR_PIN);
+void deactivateIR() {
+  isIRActivated = false;
+  Blynk.virtualWrite(V_IR_SENSOR, 0);
+}
 
-  if (isActivated) {
-    Blynk.virtualWrite(V_IR_SENSOR, 1);
-    
-    // Online Spraying
-    if (online && !spraying && hasSupply) spray();
-  }
-  else {
-    Blynk.virtualWrite(V_IR_SENSOR, 0);
+void detectIR() {
+  // check if IR changed
+  if (currentIR != digitalRead(IR_SENSOR_PIN)) {
+    // check if IR is already on
+    if (!isIRActivated) {
+      isIRActivated = true;
+      Blynk.virtualWrite(V_IR_SENSOR, 1);
+
+      if (online && !spraying && hasSupply) spray();
+      
+      timer.setTimeout(IR_TIMEOUT, deactivateIR);
+    }
   }
 }
 
@@ -176,8 +185,6 @@ void reset_notify() {
 void measureWater() {
   int water = analogRead(WATER_SENSOR_PIN);
   digitalWrite(WATER_POWER_PIN, LOW);
-
-  // water = WATER_THRESHOLD + 2;
 
   if (water < WATER_THRESHOLD) {
     if (hasSupply) {
@@ -240,6 +247,8 @@ void setup()
   digitalWrite(MOTOR_PIN, LOW);
   digitalWrite(WATER_POWER_PIN, LOW);
   digitalWrite(IR_POWER_PIN, HIGH);
+
+  currentIR = digitalRead(IR_SENSOR_PIN);
 }
 
 void loop() {
