@@ -7,11 +7,10 @@
 #define BLYNK_FIRMWARE_VERSION        "0.1.0"
 #define BLYNK_PRINT Serial
 //#define BLYNK_DEBUG
+#define APP_DEBUG
 
 // must be after #define
 #include "BlynkEdgent.h"
-
-#define APP_DEBUG
 
 #define V_SPRAYTIME V1
 #define V_ONLINE V2
@@ -23,7 +22,7 @@
 #define V_SUPPLY V8
 
 // #define BOARD BUTTON PIN in Settings.h for reboot to connect to new network
-#define LED_PIN 2
+#define LED_PIN 23
 #define IR_SENSOR_PIN 13
 #define IR_POWER_PIN 14
 #define MOTOR_PIN 26
@@ -46,11 +45,12 @@ bool hasSupply = false;
 int rest_pos = 160;
 int spray_pos = 20;
 
-// TO DO
+// TODO
 // IR sensor to push mode given sensor is a toggle
 // replace spray time with no. of sprays to set by user
 // water sensor check every day / few hours to prevent corrosion
 // calibrate water sensor (when empty)
+// settings page in the app
 
 void debug(String message) {
   Serial.print((String) message + "\n");
