@@ -45,7 +45,7 @@ WidgetTerminal terminal(V_TERMINAL);
 Servo myservo;
 
 int sprayNum;
-int sprayCount;
+int sprayCount = 0;
 double sprayTime;
 double sprayRatio;
 bool connected = false;
@@ -80,22 +80,28 @@ void stop_spray() {
   spraying = false;
   // digitalWrite(MOTOR_PIN, LOW);
   myservo.write(rest_pos);
-  timer.setTimeout(sprayTime * 1000, rest_servo);
 
-  Blynk.virtualWrite(V_SPRAYING, 0);
-  Blynk.virtualWrite(V_TEST_SPRAY, 0);
-  Blynk.setProperty(V_ONLINE, "isDisabled", false);
+  if (sprayCount == sprayNum) {
+    sprayCount = 0;
 
-  if (!online) {
-    Blynk.setProperty(V_TEST_SPRAY, "isDisabled", false);
-    Blynk.setProperty(V_SPRAYTIME, "isDisabled", false);
-    Blynk.setProperty(V_NUMBER_OF_SPRAY, "isDisabled", false);
-    Blynk.setProperty(V_SPRAY_AMOUNT, "isDisabled", false);
+    timer.setTimeout(sprayTime * 1000, rest_servo);
+
+    Blynk.virtualWrite(V_SPRAYING, 0);
+    Blynk.virtualWrite(V_TEST_SPRAY, 0);
+    Blynk.setProperty(V_ONLINE, "isDisabled", false);
+
+    if (!online) {
+      Blynk.setProperty(V_TEST_SPRAY, "isDisabled", false);
+      Blynk.setProperty(V_SPRAYTIME, "isDisabled", false);
+      Blynk.setProperty(V_NUMBER_OF_SPRAY, "isDisabled", false);
+      Blynk.setProperty(V_SPRAY_AMOUNT, "isDisabled", false);
+    }
   }
 }
 
-void spray() {
+void sprayOnce() {
   spraying = true;
+  sprayCount++;
   // digitalWrite(MOTOR_PIN, HIGH);
   myservo.attach(MOTOR_PIN, 500, 2400); // using default min/max of 1000us and 2000us
   myservo.write(spray_pos * sprayRatio);
@@ -104,6 +110,10 @@ void spray() {
 
   // Stop spraying after sprayTime
   timer.setTimeout(sprayTime * 1000, stop_spray);
+}
+
+void spray() {
+  timer.setTimer(sprayTime * 1000 * 2.2, sprayOnce, sprayNum);
 }
 
 BLYNK_CONNECTED() {
@@ -242,7 +252,7 @@ void detectIR() {
   if (currentIR != digitalRead(IR_SENSOR_PIN)) {
     currentIR = digitalRead(IR_SENSOR_PIN);
     // if (online && !spraying && hasSupply) spray();
-    if (online && !spraying) spray();
+    if (online && !spraying && sprayCount == 0) spray();
   }
 }
 
