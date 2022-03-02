@@ -235,7 +235,7 @@ void setup()
   digitalWrite(WATER_POWER_PIN, LOW);
   digitalWrite(IR_POWER_PIN, HIGH);
 
-  // attachInterrupt(digitalPinToInterrupt(IR_SENSOR_PIN), detectIR, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(IR_SENSOR_PIN), detectIR, CHANGE);
 }
 
 void loop() {
