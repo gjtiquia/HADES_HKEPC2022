@@ -58,7 +58,7 @@ bool isIRActivated = false;
 bool notificationToggle = true;
 int rest_pos = 160;
 int spray_pos = 20;
-int water_threshold = 1800;
+int water_threshold;
 
 // TODO
 // replace spray time with no. of sprays to set by user
@@ -78,7 +78,6 @@ void rest_servo() {
 
 void stop_spray() {
   spraying = false;
-  // digitalWrite(MOTOR_PIN, LOW);
   myservo.write(rest_pos);
 
   if (sprayCount == sprayNum) {
@@ -102,9 +101,9 @@ void stop_spray() {
 void sprayOnce() {
   spraying = true;
   sprayCount++;
-  // digitalWrite(MOTOR_PIN, HIGH);
+  debug((String) "Spray Count: " + sprayCount);
   myservo.attach(MOTOR_PIN, 500, 2400); // using default min/max of 1000us and 2000us
-  myservo.write(spray_pos * sprayRatio);
+  myservo.write(spray_pos + (rest_pos - spray_pos) * (1 - sprayRatio));
   Blynk.virtualWrite(V_SPRAYING, 1);
   Blynk.setProperty(V_ONLINE, "isDisabled", true);
 
@@ -113,7 +112,12 @@ void sprayOnce() {
 }
 
 void spray() {
-  timer.setTimer(sprayTime * 1000 * 2.2, sprayOnce, sprayNum);
+  debug((String) "Will spray " + sprayNum + " time(s)");
+
+  sprayOnce();
+  if (sprayNum > 1) {
+    timer.setTimer(sprayTime * 1000 * 2.2, sprayOnce, sprayNum - 1);
+  }
 }
 
 BLYNK_CONNECTED() {
@@ -138,6 +142,9 @@ BLYNK_CONNECTED() {
   Blynk.setProperty(V_ONLINE, "isDisabled", false);
 
   Blynk.syncAll();
+
+  // Redundency
+  Blynk.syncVirtual(V_SPRAY_AMOUNT, V_NUMBER_OF_SPRAY, V_WATER_THRESHOLD);
 }
 
 BLYNK_WRITE(V_SPRAYTIME) {
@@ -147,7 +154,13 @@ BLYNK_WRITE(V_SPRAYTIME) {
 
 BLYNK_WRITE(V_SPRAY_AMOUNT) {
   sprayRatio = param.asDouble();
-  debug((String) "Spray Amount: " + sprayRatio * 100 + "%");
+
+  int angle = spray_pos + (rest_pos - spray_pos) * (1 - sprayRatio);
+
+  debug(
+    (String) "Spray Amount: " + sprayRatio * 100 + "% [" 
+    + rest_pos + " -> " + angle + " -> " + spray_pos + "]"
+  );
 }
 
 BLYNK_WRITE(V_NUMBER_OF_SPRAY) {
