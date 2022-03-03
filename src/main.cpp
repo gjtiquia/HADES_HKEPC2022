@@ -60,11 +60,6 @@ int rest_pos = 160;
 int spray_pos = 20;
 int water_threshold;
 
-// TODO
-// replace spray time with no. of sprays to set by user
-// add sprayAmount? set a ratio 0 to 1 and find the angle between min and max
-// spray now button
-
 void debug(String message) {
   Serial.print((String) message + "\n");
   terminal.println((String) message);
