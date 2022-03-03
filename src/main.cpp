@@ -20,6 +20,12 @@
 #define V_TERMINAL V6
 #define V_TEST_CONNECTION V7
 #define V_SUPPLY V8
+#define V_NOTIFICATION_TOGGLE V9
+#define V_MEASURE_WATER V10
+#define V_SET_WATER_THRESHOLD V11
+#define V_WATER_THRESHOLD V12
+#define V_NUMBER_OF_SPRAY V13
+#define V_SPRAY_AMOUNT V14
 
 // #define BOARD BUTTON PIN in Settings.h for reboot to connect to new network
 #define LED_PIN 23
@@ -29,7 +35,6 @@
 #define WATER_POWER_PIN 33
 #define WATER_SENSOR_PIN 35
 
-#define WATER_THRESHOLD 2
 #define WATER_NOTIFY_LIMIT_TIME 1800000 // in ms = 30min
 #define WATER_DETECT_FREQUENCY 1800000 // in ms = 30min
 
@@ -39,7 +44,10 @@ SimpleTimer timer;
 WidgetTerminal terminal(V_TERMINAL);
 Servo myservo;
 
+int sprayNum;
+int sprayCount = 0;
 double sprayTime;
+double sprayRatio;
 bool connected = false;
 bool online = false;
 bool spraying = false;
@@ -47,15 +55,10 @@ bool notified = false;
 bool hasSupply = false;
 bool currentIR = false;
 bool isIRActivated = false;
+bool notificationToggle = true;
 int rest_pos = 160;
 int spray_pos = 20;
-
-// TODO
-// replace spray time with no. of sprays to set by user
-// water sensor calibration
-// settings page in the app
-// sprayTime set max to 2 sec
-// add sprayAmount? set a ratio 0 to 1 and find the angle between min and max
+int water_threshold;
 
 void debug(String message) {
   Serial.print((String) message + "\n");
@@ -70,30 +73,46 @@ void rest_servo() {
 
 void stop_spray() {
   spraying = false;
-  // digitalWrite(MOTOR_PIN, LOW);
   myservo.write(rest_pos);
-  timer.setTimeout(sprayTime * 1000, rest_servo);
 
-  Blynk.virtualWrite(V_SPRAYING, 0);
-  Blynk.virtualWrite(V_TEST_SPRAY, 0);
-  Blynk.setProperty(V_ONLINE, "isDisabled", false);
+  if (sprayCount == sprayNum) {
+    sprayCount = 0;
 
-  if (!online) {
-    Blynk.setProperty(V_TEST_SPRAY, "isDisabled", false);
-    Blynk.setProperty(V_SPRAYTIME, "isDisabled", false);
+    timer.setTimeout(sprayTime * 1000, rest_servo);
+
+    Blynk.virtualWrite(V_SPRAYING, 0);
+    Blynk.virtualWrite(V_TEST_SPRAY, 0);
+    Blynk.setProperty(V_ONLINE, "isDisabled", false);
+
+    if (!online) {
+      Blynk.setProperty(V_TEST_SPRAY, "isDisabled", false);
+      Blynk.setProperty(V_SPRAYTIME, "isDisabled", false);
+      Blynk.setProperty(V_NUMBER_OF_SPRAY, "isDisabled", false);
+      Blynk.setProperty(V_SPRAY_AMOUNT, "isDisabled", false);
+    }
   }
 }
 
-void spray() {
+void sprayOnce() {
   spraying = true;
-  // digitalWrite(MOTOR_PIN, HIGH);
+  sprayCount++;
+  debug((String) "Spray Count: " + sprayCount);
   myservo.attach(MOTOR_PIN, 500, 2400); // using default min/max of 1000us and 2000us
-  myservo.write(spray_pos);
+  myservo.write(spray_pos + (rest_pos - spray_pos) * (1 - sprayRatio));
   Blynk.virtualWrite(V_SPRAYING, 1);
   Blynk.setProperty(V_ONLINE, "isDisabled", true);
 
   // Stop spraying after sprayTime
   timer.setTimeout(sprayTime * 1000, stop_spray);
+}
+
+void spray() {
+  debug((String) "Will spray " + sprayNum + " time(s)");
+
+  sprayOnce();
+  if (sprayNum > 1) {
+    timer.setTimer(sprayTime * 1000 * 2.2, sprayOnce, sprayNum - 1);
+  }
 }
 
 BLYNK_CONNECTED() {
@@ -110,16 +129,38 @@ BLYNK_CONNECTED() {
   Blynk.virtualWrite(V_SPRAYING, 0);
   Blynk.virtualWrite(V_TEST_SPRAY, 0);
   Blynk.virtualWrite(V_SUPPLY, 0);
+  Blynk.virtualWrite(V_NOTIFICATION_TOGGLE, 0);
   Blynk.setProperty(V_TEST_SPRAY, "isDisabled", false);
   Blynk.setProperty(V_SPRAYTIME, "isDisabled", false);
+  Blynk.setProperty(V_NUMBER_OF_SPRAY, "isDisabled", false);
+  Blynk.setProperty(V_SPRAY_AMOUNT, "isDisabled", false);
   Blynk.setProperty(V_ONLINE, "isDisabled", false);
 
   Blynk.syncAll();
+
+  // Redundency
+  Blynk.syncVirtual(V_SPRAY_AMOUNT, V_NUMBER_OF_SPRAY, V_WATER_THRESHOLD);
 }
 
 BLYNK_WRITE(V_SPRAYTIME) {
   sprayTime = param.asDouble();
   debug((String) "Spray Time: " + sprayTime + "s");
+}
+
+BLYNK_WRITE(V_SPRAY_AMOUNT) {
+  sprayRatio = param.asDouble();
+
+  int angle = spray_pos + (rest_pos - spray_pos) * (1 - sprayRatio);
+
+  debug(
+    (String) "Spray Amount: " + sprayRatio * 100 + "% [" 
+    + rest_pos + " -> " + angle + " -> " + spray_pos + "]"
+  );
+}
+
+BLYNK_WRITE(V_NUMBER_OF_SPRAY) {
+  sprayNum = param.asDouble();
+  debug((String) "Number of Spray: " + sprayNum);
 }
 
 BLYNK_WRITE(V_TEST_CONNECTION) {
@@ -136,6 +177,8 @@ BLYNK_WRITE(V_ONLINE) {
   if (state == 0) {
     online = false;
     Blynk.setProperty(V_SPRAYTIME, "isDisabled", false);
+    Blynk.setProperty(V_NUMBER_OF_SPRAY, "isDisabled", false);
+    Blynk.setProperty(V_SPRAY_AMOUNT, "isDisabled", false);
     Blynk.setProperty(V_TEST_SPRAY, "isDisabled", false);
 
     notified = false;
@@ -143,7 +186,22 @@ BLYNK_WRITE(V_ONLINE) {
   else if (state == 1) {
     online = true;
     Blynk.setProperty(V_SPRAYTIME, "isDisabled", true);
+    Blynk.setProperty(V_NUMBER_OF_SPRAY, "isDisabled", true);
+    Blynk.setProperty(V_SPRAY_AMOUNT, "isDisabled", true);
     Blynk.setProperty(V_TEST_SPRAY, "isDisabled", true);
+  }
+}
+
+BLYNK_WRITE(V_NOTIFICATION_TOGGLE) {
+  int state = param.asInt();
+
+  debug((String) "Notification Toggled: " + state);
+
+  if (state == 0) {
+    notificationToggle = false;
+  }
+  else if (state == 1) {
+    notificationToggle = true;
   }
 }
 
@@ -155,7 +213,45 @@ BLYNK_WRITE(V_TEST_SPRAY) {
   if (state == 1) {
     Blynk.setProperty(V_TEST_SPRAY, "isDisabled", true);
     Blynk.setProperty(V_SPRAYTIME, "isDisabled", true);
+    Blynk.setProperty(V_NUMBER_OF_SPRAY, "isDisabled", true);
+    Blynk.setProperty(V_SPRAY_AMOUNT, "isDisabled", true);
     spray();
+  }
+}
+
+BLYNK_WRITE(V_WATER_THRESHOLD) {
+  water_threshold = param.asInt();
+  debug((String) "Water Threshold: " + water_threshold);
+}
+
+void setWaterThreshold() {
+  water_threshold = analogRead(WATER_SENSOR_PIN);
+  Blynk.virtualWrite(V_WATER_THRESHOLD, water_threshold);
+  digitalWrite(WATER_POWER_PIN, LOW);
+  debug((String) "Water Threshold Set as: " + water_threshold);
+}
+
+
+BLYNK_WRITE(V_SET_WATER_THRESHOLD) {
+  int state = param.asInt();
+  if (state == 1) {
+    digitalWrite(WATER_POWER_PIN, HIGH);
+    timer.setTimeout(10, setWaterThreshold);
+  }
+}
+
+void measureWaterThreshold() {
+  int measuredWater = analogRead(WATER_SENSOR_PIN);
+  Blynk.virtualWrite(V_WATER_THRESHOLD, measuredWater);
+  digitalWrite(WATER_POWER_PIN, LOW);
+  debug((String) "Water Measured as: " + measuredWater);
+}
+
+BLYNK_WRITE(V_MEASURE_WATER) {
+  int state = param.asInt();
+  if (state == 1) {
+    digitalWrite(WATER_POWER_PIN, HIGH);
+    timer.setTimeout(10, measureWaterThreshold);
   }
 }
 
@@ -164,7 +260,7 @@ void detectIR() {
   if (currentIR != digitalRead(IR_SENSOR_PIN)) {
     currentIR = digitalRead(IR_SENSOR_PIN);
     // if (online && !spraying && hasSupply) spray();
-    if (online && !spraying) spray();
+    if (online && !spraying && sprayCount == 0) spray();
   }
 }
 
@@ -174,15 +270,16 @@ void reset_notify() {
 
 void measureWater() {
   int water = analogRead(WATER_SENSOR_PIN);
+  debug((String) "Water Measured as: " + water);
   digitalWrite(WATER_POWER_PIN, LOW);
 
-  if (water < WATER_THRESHOLD) {
+  if (water < water_threshold) {
     if (hasSupply) {
       Blynk.virtualWrite(V_SUPPLY, 0);
       hasSupply = false;
     }
 
-    if (online && !notified) {
+    if (online && !notified && notificationToggle) {
       // push
       debug("Pushed Notification");
       Blynk.logEvent("refill_disinfectant");
