@@ -139,7 +139,7 @@ BLYNK_CONNECTED() {
   Blynk.virtualWrite(V_SPRAYING, 0);
   Blynk.virtualWrite(V_TEST_SPRAY, 0);
   Blynk.virtualWrite(V_SUPPLY, 0);
-  Blynk.virtualWrite(V_NOTIFICATION_TOGGLE, 0);
+  Blynk.virtualWrite(V_NOTIFICATION_TOGGLE, 1);
   Blynk.setProperty(V_TEST_SPRAY, "isDisabled", false);
   Blynk.setProperty(V_SPRAYTIME, "isDisabled", false);
   Blynk.setProperty(V_NUMBER_OF_SPRAY, "isDisabled", false);
@@ -149,7 +149,7 @@ BLYNK_CONNECTED() {
   Blynk.syncAll();
 
   // Redundency
-  Blynk.syncVirtual(V_SPRAY_AMOUNT, V_NUMBER_OF_SPRAY, V_WATER_THRESHOLD);
+  Blynk.syncVirtual(V_SPRAY_AMOUNT, V_NUMBER_OF_SPRAY, V_WATER_THRESHOLD, V_NOTIFICATION_TOGGLE);
 }
 
 // Calls whenever the spray time slider changes value.
@@ -321,7 +321,7 @@ void measureWater() {
     }
 
     if (online && !notified && notificationToggle) {
-      // push
+      // push notification
       debug("Pushed Notification");
       Blynk.logEvent("refill_disinfectant");
 
