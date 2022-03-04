@@ -28,7 +28,6 @@
 #define V_SPRAY_AMOUNT V14
 
 // #define BOARD BUTTON PIN in Settings.h for reboot to connect to new network
-#define LED_PIN 23
 #define IR_SENSOR_PIN 13
 #define IR_POWER_PIN 14
 #define MOTOR_PIN 26
@@ -60,17 +59,23 @@ int rest_pos = 160;
 int spray_pos = 20;
 int water_threshold;
 
+// Function for displaying strings in the console and in the terminal widget.
 void debug(String message) {
   Serial.print((String) message + "\n");
   terminal.println((String) message);
   terminal.flush();
 }
 
+// Function to rest and detach the servo motor.
+// Note: Needs to be above stop_spray() as it is referenced there.
 void rest_servo() {
   myservo.detach();
   debug("Rested");
 }
 
+// Function to stop spraying by resetting the servo arm position.
+// Will reset sprayCount and app widgets when reached the target number of sprays.
+// Note: Needs to be above sprayOnce() as it is referenced there.
 void stop_spray() {
   spraying = false;
   myservo.write(rest_pos);
@@ -93,6 +98,8 @@ void stop_spray() {
   }
 }
 
+// Function to spray once by setting the servo arm to the desired position.
+// Note: Needs to be above spray() as it is referenced there.
 void sprayOnce() {
   spraying = true;
   sprayCount++;
@@ -106,6 +113,8 @@ void sprayOnce() {
   timer.setTimeout(sprayTime * 1000, stop_spray);
 }
 
+// Function to instruct the servo to spray for a certain number of times
+// Note: This funciton is referenced in multiple areas of the code so is placed high above.
 void spray() {
   debug((String) "Will spray " + sprayNum + " time(s)");
 
@@ -115,9 +124,10 @@ void spray() {
   }
 }
 
+// Called when ESP32 is connected to the Blynk.Cloud
+// Initializes the Blynk.App widget UI and also gets the parameters for the app to work.
 BLYNK_CONNECTED() {
   connected = true;
-  digitalWrite(LED_PIN, HIGH);
 
   terminal.clear();
   terminal.println("Device Connected");
@@ -142,11 +152,15 @@ BLYNK_CONNECTED() {
   Blynk.syncVirtual(V_SPRAY_AMOUNT, V_NUMBER_OF_SPRAY, V_WATER_THRESHOLD);
 }
 
+// Calls whenever the spray time slider changes value.
+// Also calls with Blynk.syncAll() and Blynk.syncVirtual().
 BLYNK_WRITE(V_SPRAYTIME) {
   sprayTime = param.asDouble();
   debug((String) "Spray Time: " + sprayTime + "s");
 }
 
+// Calls whenever the spray amount slider changes value.
+// Also calls with Blynk.syncAll() and Blynk.syncVirtual().
 BLYNK_WRITE(V_SPRAY_AMOUNT) {
   sprayRatio = param.asDouble();
 
@@ -158,17 +172,24 @@ BLYNK_WRITE(V_SPRAY_AMOUNT) {
   );
 }
 
+// Calls whenever the number of spray slider changes value.
+// Also calls with Blynk.syncAll() and Blynk.syncVirtual().
 BLYNK_WRITE(V_NUMBER_OF_SPRAY) {
   sprayNum = param.asDouble();
   debug((String) "Number of Spray: " + sprayNum);
 }
 
+// Calls whenever the test connection button is pressed.
+// Also calls with Blynk.syncAll() and Blynk.syncVirtual().
 BLYNK_WRITE(V_TEST_CONNECTION) {
   int button = param.asInt();
 
   debug((String) "Test Button Pressed: " + button);
 }
 
+// Calls whenever the online toggle button is pressed.
+// Also calls with Blynk.syncAll() and Blynk.syncVirtual().
+// Enables and disables certain widgets when online or offine.
 BLYNK_WRITE(V_ONLINE) {
   int state = param.asInt();
 
@@ -192,6 +213,8 @@ BLYNK_WRITE(V_ONLINE) {
   }
 }
 
+// Calls whenever the notification toggle button is pressed.
+// Also calls with Blynk.syncAll() and Blynk.syncVirtual().
 BLYNK_WRITE(V_NOTIFICATION_TOGGLE) {
   int state = param.asInt();
 
@@ -205,6 +228,8 @@ BLYNK_WRITE(V_NOTIFICATION_TOGGLE) {
   }
 }
 
+// Calls whenever the spray now or test spray button is pressed.
+// Also calls with Blynk.syncAll() and Blynk.syncVirtual().
 BLYNK_WRITE(V_TEST_SPRAY) {
   int state = param.asInt();
 
@@ -219,11 +244,15 @@ BLYNK_WRITE(V_TEST_SPRAY) {
   }
 }
 
+// Calls whenever the value of the measured water threshold changes.
+// Also calls with Blynk.syncAll() and Blynk.syncVirtual().
 BLYNK_WRITE(V_WATER_THRESHOLD) {
   water_threshold = param.asInt();
   debug((String) "Water Threshold: " + water_threshold);
 }
 
+// Function to measure the water level with the water sensor and set the water threshold.
+// Note: Needs to be above BLYNK_WRITE(V_SET_WATER_THRESHOLD) as it is referenced there.
 void setWaterThreshold() {
   water_threshold = analogRead(WATER_SENSOR_PIN);
   Blynk.virtualWrite(V_WATER_THRESHOLD, water_threshold);
@@ -231,7 +260,8 @@ void setWaterThreshold() {
   debug((String) "Water Threshold Set as: " + water_threshold);
 }
 
-
+// Calls whenever the set water threshold button is pressed.
+// Also calls with Blynk.syncAll() and Blynk.syncVirtual().
 BLYNK_WRITE(V_SET_WATER_THRESHOLD) {
   int state = param.asInt();
   if (state == 1) {
@@ -240,6 +270,8 @@ BLYNK_WRITE(V_SET_WATER_THRESHOLD) {
   }
 }
 
+// Function to measure the water level with the water sensor.
+// Note: Needs to be above BLYNK_WRITE(V_MEASURE_WATER) as it is referenced there.
 void measureWaterThreshold() {
   int measuredWater = analogRead(WATER_SENSOR_PIN);
   Blynk.virtualWrite(V_WATER_THRESHOLD, measuredWater);
@@ -247,6 +279,8 @@ void measureWaterThreshold() {
   debug((String) "Water Measured as: " + measuredWater);
 }
 
+// Calls whenever the measure water button is pressed.
+// Also calls with Blynk.syncAll() and Blynk.syncVirtual().
 BLYNK_WRITE(V_MEASURE_WATER) {
   int state = param.asInt();
   if (state == 1) {
@@ -255,6 +289,7 @@ BLYNK_WRITE(V_MEASURE_WATER) {
   }
 }
 
+// Function to check the IR sensor input and spray accordingly
 void detectIR() {
   // check if IR changed
   if (currentIR != digitalRead(IR_SENSOR_PIN)) {
@@ -264,10 +299,16 @@ void detectIR() {
   }
 }
 
+// Function to reset the notified flag after a specified amount of time
+// Note: Needs to be above measureWater() as it is referenced there.
 void reset_notify() {
   notified = false;
 }
 
+// Function to measure the water, display the supply status 
+// and push notifications based on the water threshold.
+// Measures every specified time period.
+// Note:  Needs to be above detectWater() as it is referenced there.
 void measureWater() {
   int water = analogRead(WATER_SENSOR_PIN);
   debug((String) "Water Measured as: " + water);
@@ -297,12 +338,16 @@ void measureWater() {
   }
 }
 
+// Function to first turn on the water sensor power pin before measuring water.
 void detectWater() {
   // measure water resistance
   digitalWrite(WATER_POWER_PIN, HIGH);
   timer.setTimeout(10, measureWater);
 }
 
+// Begin serial communication and Blynk WiFi connection
+// Setup servos and GPIO pins
+// Begins the water measuring interval
 void setup()
 {
   Serial.begin(115200);
@@ -323,10 +368,8 @@ void setup()
   pinMode(IR_POWER_PIN, OUTPUT);
   pinMode(WATER_SENSOR_PIN, INPUT);
   pinMode(WATER_POWER_PIN, OUTPUT);
-  pinMode(LED_PIN, OUTPUT);
   pinMode(MOTOR_PIN, OUTPUT);
 
-  digitalWrite(LED_PIN, LOW);
   digitalWrite(MOTOR_PIN, LOW);
   digitalWrite(WATER_POWER_PIN, LOW);
   digitalWrite(IR_POWER_PIN, HIGH);
@@ -334,17 +377,21 @@ void setup()
   currentIR = digitalRead(IR_SENSOR_PIN);
 
   // Start to Detect Water every 30min
+  detectWater();
   timer.setInterval(WATER_DETECT_FREQUENCY, detectWater);
 }
 
+// Runs the WiFi connectino
+// Runs the timer
+// Checks if connected
+// Checks for IR sensor input
 void loop() {
   BlynkEdgent.run();
   timer.run();
 
-  // Connection LED indicator
-  if (connected && !Blynk.connected()){
+  // Connected flag
+  if (connected && !Blynk.connected()) {
     connected = false;
-    digitalWrite(LED_PIN, LOW); 
   }
 
   // Detect IR
